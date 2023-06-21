@@ -94,7 +94,7 @@ local function create_hint_state(opts)
   end
 
   -- Store users cursorline state
-  hint_state.cursorline = vim.api.nvim_win_get_option(vim.api.nvim_get_current_win(), 'cursorline')
+  hint_state.cursorline = vim.wo.cursorline
 
   return hint_state
 end
@@ -182,9 +182,9 @@ local function add_virt_cur(ns)
   local cur_line = vim.api.nvim_get_current_line()
 
   -- toggle cursorline off if currently set
-  local cursorline_info = vim.api.nvim_win_get_option(vim.api.nvim_get_current_win(), 'cursorline')
+  local cursorline_info = vim.wo.cursorline
   if cursorline_info == true then
-    vim.api.nvim_win_set_option(vim.api.nvim_get_current_win(), 'cursorline', false)
+    vim.wo.cursorline = false
   end
 
   -- first check to see if cursor is in a tab char or past end of line or in empty line
@@ -247,16 +247,10 @@ function M.get_input_pattern(prompt, maxchar, opts)
     vim.cmd.redraw()
     vim.api.nvim_echo({ { prompt, 'Question' }, { pat } }, false, {})
 
-    local ok, key = pcall(vim.fn.getchar)
+    local ok, key = pcall(vim.fn.getcharstr)
     if not ok then -- Interrupted by <C-c>
       pat = nil
       break
-    end
-
-    if type(key) == 'number' then
-      key = vim.fn.nr2char(key)
-    elseif key:byte() == 128 then
-      -- It's a special key in string
     end
 
     if key == K_Esc then
@@ -448,7 +442,7 @@ function M.quit(hint_state)
 
   -- Restore users cursorline setting
   if hint_state.cursorline == true then
-    vim.api.nvim_win_set_option(vim.api.nvim_get_current_win(), 'cursorline', true)
+    vim.wo.cursorline = true
   end
 
   for _, buf in ipairs(hint_state.buf_list) do
