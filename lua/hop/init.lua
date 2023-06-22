@@ -89,9 +89,7 @@ local function create_hint_state(opts)
   clear_namespace(hint_state.buf_list, hint_state.dim_ns)
 
   -- backup namespaces of diagnostic
-  if vim.version.gt(vim.version(), { 0, 5, 0 }) then
-    hint_state.diag_ns = vim.diagnostic.get_namespaces()
-  end
+  hint_state.diag_ns = vim.diagnostic.get_namespaces()
 
   -- Store users cursorline state
   hint_state.cursorline = vim.wo.cursorline
@@ -157,10 +155,8 @@ local function apply_dimming(hint_state, opts)
       set_unmatched_lines(bctx.buffer_handle, hint_state.dim_ns, wctx, opts)
     end
 
-    if vim.version.gt(vim.version(), { 0, 5, 0 }) then
-      for ns in pairs(hint_state.diag_ns) do
-        vim.diagnostic.show(ns, bctx.buffer_handle, nil, { virtual_text = false })
-      end
+    for ns in pairs(hint_state.diag_ns) do
+      vim.diagnostic.show(ns, bctx.buffer_handle, nil, { virtual_text = false })
     end
   end
 end
@@ -449,7 +445,7 @@ function M.quit(hint_state)
     -- sometimes, buffers might be unloaded; that’s the case with floats for instance (we can invoke Hop from them but
     -- then they disappear); we need to check whether the buffer is still valid before trying to do anything else with
     -- it
-    if vim.api.nvim_buf_is_valid(buf) and vim.version.gt(vim.version(), { 0, 5, 0 }) then
+    if vim.api.nvim_buf_is_valid(buf) then
       for ns in pairs(hint_state.diag_ns) do
         vim.diagnostic.show(ns, buf)
       end
