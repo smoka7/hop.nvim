@@ -1,17 +1,15 @@
 local hop = require('hop')
 local hop_hint = require('hop.hint')
-local mock = require('luassert.mock')
-local stub = require('luassert.stub')
 local api = vim.api
 local eq = assert.are.same
 
 local function override_getcharstr(override, closure)
-  local charstr = stub(vim.fn, 'getcharstr')
+  local mocked = vim.fn.getcharstr
+  vim.fn.getcharstr = override
 
-  charstr.returns(override())
   local r = closure()
 
-  mock.revert(charstr)
+  vim.fn.getcharstr = mocked
 
   return r
 end
@@ -39,7 +37,7 @@ describe('Hop movement is correct', function()
         return 'c'
       end
       if key_counter == 2 then
-        return 'a'
+        return 's'
       end
     end, function()
       hop.hint_char1({ direction = hop_hint.HintDirection.AFTER_CURSOR })
@@ -47,6 +45,6 @@ describe('Hop movement is correct', function()
 
     local end_pos = api.nvim_win_get_cursor(0)
 
-    eq(end_pos[2], 3)
+    eq(end_pos[2], 28)
   end)
 end)
