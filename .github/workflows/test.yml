@@ -24,6 +24,7 @@ jobs:
 
       - uses: jitterbit/get-changed-files@v1
         id: source-files
+        continue-on-error: true
         with:
           # Format of the steps output context.
           # Can be 'space-delimited', 'csv', or 'json'.
