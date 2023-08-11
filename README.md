@@ -14,10 +14,6 @@
   <img src="https://img.shields.io/github/v/tag/smoka7/hop.nvim?color=pink&label=release&style=for-the-badge"/>
 </p>
 
-<p align="center">
-  <a href="#using-vim-plug">Install</a> · <a href="https://github.com/phaazon/hop.nvim/wiki">Wiki</a> · <a href="https://github.com/phaazon/hop.nvim/wiki/Screenshots">Screenshots</a> · <a href="https://matrix.to/#/#hop.nvim:matrix.org">Discuss</a>
-</p>
-
 **Hop** is an [EasyMotion](https://github.com/easymotion/vim-easymotion)-like plugin allowing you to jump anywhere in a
 document with as few keystrokes as possible. It does so by annotating text in
 your buffer with hints, short string sequences for which each character
@@ -30,22 +26,6 @@ target in your document reachable in a few keystrokes.
 </p>
 
 This is a fork of the [original hop.nvim repo](https://github.com/phaazon/hop.nvim)
-
-<!-- vim-markdown-toc GFM -->
-
-* [Motivation](#motivation)
-* [Features](#features)
-* [Getting started](#getting-started)
-  * [Installation](#installation)
-    * [Important note about versioning](#important-note-about-versioning)
-    * [Using lazy.nvim](#using-lazynvim)
-    * [Using packer](#using-packer)
-    * [Nightly users](#nightly-users)
-* [Usage](#usage)
-* [Keybindings](#keybindings)
-* [Chat](#chat)
-
-<!-- vim-markdown-toc -->
 
 # Motivation
 
@@ -118,9 +98,7 @@ dependency to be sure your config will not break when Hop gets updated.
 {
     'smoka7/hop.nvim',
     version = "*"
-    config = function()
-        require 'hop'.setup()
-    end,
+    opts = {},
 }
 ```
 
