@@ -122,7 +122,7 @@ the last one**. If you are not, then you are exposed to compatibility issues / b
 
 # Usage
 
-See the [wiki](https://github.com/phaazon/hop.nvim/wiki).
+See the [wiki](https://github.com/smoka7/hop.nvim/wiki).
 
 # Keybindings
 
