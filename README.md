@@ -148,9 +148,6 @@ vim.keymap.set('', 'T', function()
 end, {remap=true})
 ```
 
-# Chat
-
-Join the discussion on the official [Matrix room](https://matrix.to/#/#hop.nvim:matrix.org)!
 
 # Other tools like hop.nvim
 
