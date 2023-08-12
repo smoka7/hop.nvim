@@ -22,7 +22,7 @@ jobs:
               - 'plugin/**'
               - 'tests/**'
 
-      - uses: jitterbit/get-changed-files@v1
+      - uses: Ana06/get-changed-files@v2
         id: source-files
         continue-on-error: true
         with:
