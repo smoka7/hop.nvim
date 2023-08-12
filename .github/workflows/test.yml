@@ -22,7 +22,7 @@ jobs:
               - 'plugin/**'
               - 'tests/**'
 
-      - uses: Ana06/get-changed-files@v2
+      - uses: Ana06/get-changed-files@v2.2.0
         id: source-files
         continue-on-error: true
         with:
