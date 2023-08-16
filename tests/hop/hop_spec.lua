@@ -139,4 +139,36 @@ describe('Hop', function()
     local end_pos = api.nvim_win_get_cursor(0)
     eq(end_pos[2], 59)
   end)
+
+  it('HopWords', function()
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+      'abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+    })
+    vim.api.nvim_win_set_cursor(0, { 1, 1 })
+    local key_counter = 0
+    override_getcharstr(function()
+      key_counter = key_counter + 1
+      if key_counter == 1 then
+        return 'q'
+      end
+    end, function()
+      hop.hint_words({ direction = hop_hint.HintDirection.AFTER_CURSOR })
+    end)
+
+    local end_pos = api.nvim_win_get_cursor(0)
+    eq(end_pos[2], 57)
+
+     key_counter = 0
+    override_getcharstr(function()
+      key_counter = key_counter + 1
+      if key_counter == 1 then
+        return 'l'
+      end
+    end, function()
+      hop.hint_words({ direction = hop_hint.HintDirection.BEFORE_CURSOR })
+    end)
+
+    end_pos = api.nvim_win_get_cursor(0)
+    eq(end_pos[2], 0)
+  end)
 end)
