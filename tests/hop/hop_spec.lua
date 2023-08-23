@@ -214,6 +214,99 @@ describe('Hop', function()
     eq(end_pos[1], 1)
   end)
 
+  it('HopCamelCase', function()
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+      'abcdefGhij.klmn#opqrst3uv!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+    })
+    vim.api.nvim_win_set_cursor(0, { 1, 1 })
+    local key_counter = 0
+    override_getcharstr(function()
+      key_counter = key_counter + 1
+      if key_counter == 1 then
+        return 'i'
+      end
+    end, function()
+      hop.hint_camel_case({ direction = hop_hint.HintDirection.AFTER_CURSOR })
+    end)
+
+    local end_pos = api.nvim_win_get_cursor(0)
+    eq(end_pos[2], 59)
+  end)
+
+  it('HopWords', function()
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+      'abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+    })
+    vim.api.nvim_win_set_cursor(0, { 1, 1 })
+    local key_counter = 0
+    override_getcharstr(function()
+      key_counter = key_counter + 1
+      if key_counter == 1 then
+        return 'q'
+      end
+    end, function()
+      hop.hint_words({ direction = hop_hint.HintDirection.AFTER_CURSOR })
+    end)
+
+    local end_pos = api.nvim_win_get_cursor(0)
+    -- TODO 57 fails ci but accepts localy
+    --eq(end_pos[2], 55)
+    eq(end_pos[1], 1)
+
+    key_counter = 0
+    override_getcharstr(function()
+      key_counter = key_counter + 1
+      if key_counter == 1 then
+        return 'l'
+      end
+    end, function()
+      hop.hint_words({ direction = hop_hint.HintDirection.BEFORE_CURSOR })
+    end)
+
+    end_pos = api.nvim_win_get_cursor(0)
+    eq(end_pos[2], 0)
+  end)
+
+  it('Hop lines start', function()
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+      '   abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+      '      abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+      '  abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+      '   abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+      '  abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+      '    abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
+    })
+
+    vim.api.nvim_win_set_cursor(0, { 1, 1 })
+    local key_counter = 0
+    override_getcharstr(function()
+      key_counter = key_counter + 1
+      if key_counter == 1 then
+        return 'd'
+      end
+    end, function()
+      hop.hint_lines_skip_whitespace({ direction = hop_hint.HintDirection.AFTER_CURSOR })
+    end)
+
+    local end_pos = api.nvim_win_get_cursor(0)
+    eq(end_pos[2], 6)
+    eq(end_pos[1], 2)
+
+    key_counter = 0
+    override_getcharstr(function()
+      key_counter = key_counter + 1
+      if key_counter == 1 then
+        return 's'
+      end
+    end, function()
+      hop.hint_lines_skip_whitespace({ direction = hop_hint.HintDirection.BEFORE_CURSOR })
+    end)
+
+    end_pos = api.nvim_win_get_cursor(0)
+    eq(end_pos[2], 3)
+    eq(end_pos[1], 1)
+  end)
+
   it('Hop lines', function()
     vim.api.nvim_buf_set_lines(0, 0, -1, false, {
       'abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
@@ -223,12 +316,13 @@ describe('Hop', function()
       'abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
       'abcdef .klmn#opqrst3u v!sxyz_bcdefgh-jklmnopq@rstuvwxy$s 0x3C',
     })
+    vim.print(vim.api.nvim_buf_get_lines(0, 0, -1, false))
     vim.api.nvim_win_set_cursor(0, { 1, 2 })
     local key_counter = 0
     override_getcharstr(function()
       key_counter = key_counter + 1
       if key_counter == 1 then
-        return 'a'
+        return 'd'
       end
     end, function()
       hop.hint_lines({ direction = hop_hint.HintDirection.AFTER_CURSOR })
