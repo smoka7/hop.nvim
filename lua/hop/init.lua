@@ -42,7 +42,7 @@ end
 
 ---@param jump_target JumpTargetModule
 ---@param opts Options
----@return function
+---@return fun(regex:Regex):function
 local function getGenerator(jump_target, opts)
   if opts.current_line_only then
     return jump_target.jump_targets_for_current_line
@@ -680,6 +680,13 @@ M.paste_char1 = function(opts)
 
     require('hop.yank').paste_from(target, opts.yank_register)
   end)
+end
+
+M.nodes = function(opts)
+  opts = override_opts(opts)
+
+  local treesitter = require('hop.treesitter')
+  M.hint_with(treesitter.run(), opts)
 end
 
 return M

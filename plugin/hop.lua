@@ -89,3 +89,7 @@ end, opts)
 user_command('HopYankChar1CurrentLineAC', function()
   hop.yank_char1({ direction = direction.AFTER_CURSOR, current_line_only = true })
 end, opts)
+
+user_command('HopNode', function()
+  hop.nodes({})
+end, opts)
