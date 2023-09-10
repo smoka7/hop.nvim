@@ -17,6 +17,7 @@ M.current_line_only = false
 M.dim_unmatched = true
 M.uppercase_labels = false
 M.multi_windows = false
+M.ignore_injections = false
 M.hint_position = hint.HintPosition.BEGIN ---@type HintPosition
 M.hint_offset = 0
 M.hint_type = hint.HintType.OVERLAY ---@type HintType

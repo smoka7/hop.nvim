@@ -1,5 +1,4 @@
 local jump_targets = require('hop.jump_target')
-local parsers = require('nvim-treesitter.parsers')
 
 local T = {}
 
@@ -7,7 +6,7 @@ T.run = function()
   ---@param opts Options
   ---@return Locations
   return function(opts)
-    local Locations = T.parse()
+    local Locations = T.parse(opts.ignore_injections)
     jump_targets.sort_indirect_jump_targets(Locations.indirect_jump_targets, opts)
     return Locations
   end
@@ -28,8 +27,9 @@ local function duplicate(targets, row, col)
 end
 
 ---
+---@param ignore_injections boolean
 ---@return Locations
-T.parse = function()
+T.parse = function(ignore_injections)
   ---@type Locations
   local locations = {
     jump_targets = {},
@@ -37,16 +37,18 @@ T.parse = function()
   }
 
   -- Check if buffer has a parser
-  local parser = parsers.get_parser()
+  local parser = vim.treesitter.get_parser()
   if not parser then
     return locations
   end
-  local root = parser:parse()[1]:root()
 
   -- Get the node at current cursor position
   local here = vim.api.nvim_win_get_cursor(0)
-  ---@type TSNode
-  local node = root:named_descendant_for_range(here[1] - 1, here[2], here[1] - 1, here[2] + 1)
+  ---@type TSNode?
+  local node = parser:named_node_for_range(
+    { here[1] - 1, here[2], here[1] - 1, here[2] },
+    { ignore_injections = ignore_injections }
+  )
 
   if not node then
     return locations
@@ -71,11 +73,6 @@ T.parse = function()
   -- Create jump targets for parents
   local parent = node:parent()
   while parent ~= nil do
-    -- Don't create a jump target for root
-    if parent:equal(root) then
-      return locations
-    end
-
     a, b, c, d = parent:range()
     append(a, b)
     append(c, d)
