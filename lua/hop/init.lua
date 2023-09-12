@@ -320,6 +320,8 @@ function M.move_cursor_to(w, line, column, opts)
   vim.api.nvim_win_set_cursor(w, { line, column })
 end
 
+---@param jump_target_gtr fun(opts:Options):Locations
+---@param opts Options
 function M.hint_with(jump_target_gtr, opts)
   M.hint_with_callback(jump_target_gtr, opts, function(jt)
     M.move_cursor_to(jt.window, jt.line + 1, jt.column - 1, opts)
@@ -685,8 +687,7 @@ end
 M.nodes = function(opts)
   opts = override_opts(opts)
 
-  local treesitter = require('hop.treesitter')
-  M.hint_with(treesitter.run(), opts)
+  M.hint_with(require('hop.treesitter').nodes(), opts)
 end
 
 return M

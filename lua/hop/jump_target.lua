@@ -168,7 +168,7 @@ end
 -- ith line, j, for the rank of the jump target, and dist, the score distance of the associated jump target. This list
 -- is sorted according to that last dist parameter in order to know how to distribute the jump targets over the buffer.
 ---@param regex Regex
----@return function
+---@return fun(opts:Options):Locations
 function M.jump_targets_by_scanning_lines(regex)
   ---@param opts Options
   ---@return Locations
@@ -255,7 +255,7 @@ end
 
 -- Jump target generator for regex applied only on the cursor line.
 ---@param regex Regex
----@return function
+---@return fun(opts:Options):Locations
 function M.jump_targets_for_current_line(regex)
   ---@param opts Options
   ---@return Locations
