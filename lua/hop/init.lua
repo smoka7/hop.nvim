@@ -684,7 +684,7 @@ M.paste_char1 = function(opts)
   end)
 end
 
-M.nodes = function(opts)
+M.hint_nodes = function(opts)
   opts = override_opts(opts)
 
   M.hint_with(require('hop.treesitter').nodes(), opts)

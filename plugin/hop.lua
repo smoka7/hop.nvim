@@ -91,5 +91,5 @@ user_command('HopYankChar1CurrentLineAC', function()
 end, opts)
 
 user_command('HopNodes', function()
-  hop.nodes({})
+  hop.hint_nodes({})
 end, opts)

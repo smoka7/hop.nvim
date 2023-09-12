@@ -1,4 +1,4 @@
-*hop.txt*    For Neovim version 0.9                  Last change: 2023 Jun 17
+*hop.txt*    For Neovim version 0.9                  Last change: 2023 Sep 11
 
                                  __
                                 / /_  ____  ____
@@ -7,7 +7,7 @@
                              /_/ /_/\____/ .___/
                                         /_/
                          · Neovim motions on speed! ·
-                                     v2.2.2
+                                     v2.3.0
 
 ==============================================================================
 CONTENTS                                                          *hop-contents*
@@ -219,6 +219,11 @@ creates a variant of the command that will only run for the current line.
     range is (exclusive,inclusive).
 
     This is akin to calling the |hop.yank_char1| Lua Function
+`:HopNodes`                                                             *:HopNodes*
+
+    Hint all Treesitter nodes surranding the node on the cursor position.
+    
+    This is akin to calling the |hop.hint_nodes| Lua Function
                                                                    *hop-lua-api*
 Lua API~
 
@@ -237,6 +242,7 @@ unstable.
 `hop.perm`        Permutation functions. Permutations are used as labels for
                 the hints.
 `hop.yank`        Yank and paste functions
+`hop.treesitter`  Parse buffer language tree
 
 Main API~
 
@@ -354,6 +360,12 @@ Most of the functions and values you need to know about are in `hop`.
 
 `hop.hint_anywhere(`{opts}`)`                                   *hop.hint_anywhere*
     Annotate anywhere in the current window with key sequences.
+
+    Arguments:~
+        {opts}  Hop options.
+
+`hop.hint_nodes(`{opts}`)`                                         *hop.hint_nodes*
+    Hint all Treesitter nodes surranding the node on the cursor position.
 
     Arguments:~
         {opts}  Hop options.
@@ -719,6 +731,12 @@ below.
 
     Defaults:~
         `jump_on_sole_occurrence = true`
+
+`ignore_injections`                            *hop-config-ignore_injections*
+   Ignore injected languages when jumping to treesitter node.
+
+    Defaults:~
+        `ignore_injections = false`
 
 `case_insensitive`                                   *hop-config-case_insensitive*
     Use case-insensitive matching by default for commands requiring user
