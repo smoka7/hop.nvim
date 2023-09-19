@@ -206,6 +206,9 @@ creates a variant of the command that will only run for the current line.
     Pastes the `defaults.yank_register` register contents by hinting the document
     like `hop.hop_char1` without jumping to the target.
 
+    You can configure the position of the paste relative to the jump target by
+    using the `hint_offset` option.
+
     This is akin to calling the |hop.paste_char1| Lua Function
 `:HopYankChar1`                                                     *:HopYankChar1*
 `:HopYankChar1BC`                                                 *:HopYankChar1BC*
@@ -216,9 +219,10 @@ creates a variant of the command that will only run for the current line.
 
     Yanks a range to `defaults.yank_register` register by hinting document like
     `hop.hop_char1` without jumping to bounds.
-    range is (exclusive,inclusive).
+    range is (inclusive,inclusive).
 
     This is akin to calling the |hop.yank_char1| Lua Function
+
 `:HopNodes`                                                             *:HopNodes*
 
     Hint all Treesitter nodes surranding the node on the cursor position.

@@ -39,7 +39,7 @@ end
 ---@return string[]
 M.get_text = function(start_range, end_range)
   start_range, end_range = check_bounds(start_range, end_range)
-  return vim.api.nvim_buf_get_text(0, start_range.line, start_range.column, end_range.line, end_range.column, {})
+  return vim.api.nvim_buf_get_text(0, start_range.line, start_range.column - 1, end_range.line, end_range.column, {})
 end
 
 return M

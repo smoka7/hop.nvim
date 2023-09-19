@@ -648,6 +648,7 @@ M.yank_char1 = function(opts)
   yank.yank_to(text, opts.yank_register)
 end
 
+---@param opts Options
 M.paste_char1 = function(opts)
   opts = override_opts(opts)
 
@@ -659,12 +660,15 @@ M.paste_char1 = function(opts)
     return
   end
 
+  ---@param jt JumpTarget?
   M.hint_with_callback(generator(jump_target.regex_by_case_searching(c, true, opts)), opts, function(jt)
     local target = jt
 
     if target == nil then
       return
     end
+
+    target.column = target.column + opts.hint_offset
 
     require('hop.yank').paste_from(target, opts.yank_register)
   end)
