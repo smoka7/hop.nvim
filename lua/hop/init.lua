@@ -388,6 +388,11 @@ end
 ---@param opts Options
 ---@param pattern string|nil
 function M.hint_patterns(opts, pattern)
+  if not M.initialized then
+    vim.notify('Hop is not initialized; please call the setup function', vim.log.levels.ERROR)
+    return
+  end
+
   local jump_regex = require('hop.jump_regex')
 
   opts = override_opts(opts)
