@@ -1,16 +1,35 @@
 -- Match jump target and return jump range within line
 ---@class Regex
 ---@field oneshot boolean
----@field match fun(s:string, jctx:JumpContext, opts:Options):ColumnRange Get column range within the line string
+---@field match fun(s:string, jctx:JumpContext, opts:Options):MatchResult|nil
 
----@class JumpRegexModule
+---@class MatchResult
+---@field b WindowCol The begin column of matched string
+---@field e WindowCol The end column of matched string
+---@field off WindowCell Always zero, unless 'virtualedit' is enabled so we can jump to blank cell
+---@field virt WindowCell|nil Always nil, unless 'virtualedit' is enabled so we can place hint at blank cell
+
+---@class RegexModule
 local M = {}
 
 local hint = require('hop.hint')
 local window = require('hop.window')
 local mappings = require('hop.mappings')
 
--- JumpRegex modes for the buffer-driven generator.
+-- Create MatchResult conveniently from vim.regex:match_str
+---@return MatchResult|nil
+function M.match_result(b, e, f, v)
+  if b and e then
+    return {
+      b = b,
+      e = e,
+      off = f or 0,
+      virt = v,
+    }
+  end
+end
+
+-- Regex modes for the buffer-driven generator.
 ---@param s string
 ---@return boolean
 local function starts_with_uppercase(s)
@@ -28,7 +47,7 @@ local function starts_with_uppercase(s)
   return f:upper() == f
 end
 
--- JumpRegex by searching a pattern.
+-- Regex by searching a pattern.
 ---@param pat string
 ---@param plain_search boolean|nil
 ---@return Regex
@@ -42,7 +61,7 @@ local function regex_by_searching(pat, plain_search)
   return {
     oneshot = false,
     match = function(s)
-      return regex:match_str(s)
+      return M.match_result(regex:match_str(s))
     end,
   }
 end
@@ -76,7 +95,7 @@ function M.regex_by_case_searching(pat, plain_search, opts)
   return {
     oneshot = false,
     match = function(s)
-      return regex:match_str(s)
+      return M.match_result(regex:match_str(s))
     end,
   }
 end
@@ -108,7 +127,7 @@ function M.regex_by_camel_case()
   return {
     oneshot = false,
     match = function(s)
-      return pat:match_str(s)
+      return M.match_result(pat:match_str(s))
     end,
   }
 end
@@ -120,10 +139,17 @@ function M.by_line_start()
     oneshot = true,
     ---@param jctx JumpContext
     match = function(_, jctx)
-      if window.is_active_line(jctx.win_ctx, jctx.line_ctx) then
+      local lctx = jctx.line_ctx
+      local wctx = jctx.win_ctx
+      if window.is_active_line(wctx, lctx) then
         return
       end
-      return 0, 1
+      if wctx.virtualedit and lctx.off_bias > 0 then
+        local line_len = string.len(lctx.line) - lctx.col_bias
+        return M.match_result(line_len, line_len + 1, lctx.off_bias, 0)
+      else
+        return M.match_result(0, 1)
+      end
     end,
   }
 end
@@ -135,20 +161,31 @@ function M.regex_by_vertical()
     oneshot = true,
     ---@param jctx JumpContext
     match = function(s, jctx, opts)
-      if window.is_cursor_line(jctx.win_ctx, jctx.line_ctx) then
-        if window.is_active_window(jctx.win_ctx) then
-          return
-        end
-        if opts.direction == hint.HintDirection.AFTER_CURSOR then
-          return 0, 1
-        end
+      local lctx = jctx.line_ctx
+      local wctx = jctx.win_ctx
+      if window.is_active_line(wctx, lctx) then
+        return
       end
-      local idx = window.cell2char(s, jctx.win_ctx.col_first)
-      local col = vim.fn.byteidx(s, idx)
-      if -1 < col and col < #s then
-        return col, col + 1
+
+      local virt = wctx.virtualedit and wctx.cursor.virt or nil
+      local line_cells = vim.fn.strdisplaywidth(lctx.line)
+      local cursor_cells = wctx.win_offset + wctx.cursor.virt
+      if cursor_cells > line_cells then
+        local line_len = string.len(lctx.line) - lctx.col_bias
+        if not virt then
+          -- When virtualedit is enabled, the line EOL is taken as the last line cell that can jump to,
+          -- so minus one to take the last line character as the last line cell when virtualedit is disabled.
+          line_len = line_len - 1
+        end
+        return M.match_result(line_len, line_len + 1, cursor_cells - line_cells, virt)
       else
-        return #s - 1, #s
+        if window.is_cursor_line(wctx, lctx) and opts.direction == hint.HintDirection.AFTER_CURSOR then
+          return M.match_result(0, 1, 0, virt)
+        else
+          local idx = window.cell2char(s, wctx.cursor.virt)
+          local col = vim.fn.byteidx(s, idx)
+          return M.match_result(col, col + 1, 0, virt)
+        end
       end
     end,
   }
@@ -166,7 +203,7 @@ function M.regex_by_line_start_skip_whitespace()
       if window.is_active_line(jctx.win_ctx, jctx.line_ctx) then
         return
       end
-      return regex:match_str(s)
+      return M.match_result(regex:match_str(s))
     end,
   }
 end

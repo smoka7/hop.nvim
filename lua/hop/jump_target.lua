@@ -11,7 +11,7 @@
 ---@class JumpTarget
 ---@field window number
 ---@field buffer number
----@field cursor CursorPos
+---@field cursor Cursor The hint for jump target will place at the Cursor.virt cell when it not nil
 ---@field length number Jump target column length
 
 -- Indirect jump targets are encoded as a flat list-table of pairs (index, score). This table allows to quickly score
@@ -33,12 +33,12 @@ local window = require('hop.window')
 local M = {}
 
 -- Manhattan distance with column and row, weighted on x so that results are more packed on y.
----@param a CursorPos
----@param b CursorPos
+---@param a Cursor
+---@param b Cursor
 ---@param x_bias number
 ---@return number
 local function manh_dist(a, b, x_bias)
-  return (x_bias * math.abs(b.row - a.row)) + math.abs(b.col - a.col)
+  return (x_bias * math.abs(b.row - a.row)) + math.abs(b.col + b.off - a.col - a.col)
 end
 
 -- Create jump targets within line
@@ -52,33 +52,35 @@ local function create_line_jump_targets(jump_ctx, opts)
   ---@type JumpTarget[]
   local jump_targets = {}
 
-  -- No possible position to place target
-  if lctx.line == '' and wctx.col_offset > 0 then
-    return jump_targets
+  -- No possible position to place target unless virtualedit is enabled
+  if not wctx.virtualedit then
+    if lctx.line_cliped == '' and wctx.win_offset > 0 then
+      return jump_targets
+    end
   end
 
   local idx = 1 -- 1-based index for lua string
   while true do
-    local s = lctx.line:sub(idx)
-    ---@type ColumnRange
-    local b, e = jump_ctx.regex.match(s, jump_ctx, opts)
-    if b == nil then
+    local s = lctx.line_cliped:sub(idx)
+    ---@type MatchResult|nil
+    local res = jump_ctx.regex.match(s, jump_ctx, opts)
+    if res == nil then
       break
     end
     -- Preview need a length to highlight the matched string. Zero means nothing to highlight.
-    local matched_length = e - b
+    local matched_length = res.e - res.b
     -- As the make for jump target must be placed at a cell (but some pattern like '^' is
     -- placed between cells), we should make sure e > b
-    if b == e then
-      e = e + 1
+    if res.b == res.e then
+      res.e = res.e + 1
     end
 
     ---@type WindowCol
-    local col = idx + b
+    local col = idx + res.b
     if opts.hint_position == hint.HintPosition.MIDDLE then
-      col = idx + math.floor((b + e) / 2)
+      col = idx + math.floor((res.b + res.e) / 2)
     elseif opts.hint_position == hint.HintPosition.END then
-      col = idx + e - 1
+      col = idx + res.e - 1
     end
     col = col - 1 -- Convert 1-based lua string index to WindowCol
     jump_targets[#jump_targets + 1] = {
@@ -87,13 +89,15 @@ local function create_line_jump_targets(jump_ctx, opts)
       cursor = {
         row = lctx.row,
         col = math.max(0, col + lctx.col_bias),
+        off = res.off or 0,
+        virt = res.virt,
       },
       length = math.max(0, matched_length),
     }
-    idx = idx + e
+    idx = idx + res.e
 
     -- Do not search further if regex is oneshot or if there is nothing more to search
-    if idx > #lctx.line or s == '' or jump_ctx.regex.oneshot then
+    if idx > #lctx.line_cliped or s == '' or jump_ctx.regex.oneshot then
       break
     end
   end

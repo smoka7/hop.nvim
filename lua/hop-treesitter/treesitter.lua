@@ -48,7 +48,12 @@ T.parse = function(ignore_injections)
 
     local len = #locations.jump_targets + 1
     -- Increment column to convert it to 1-index
-    locations.jump_targets[len] = { buffer = 0, cursor = { row = row + 1, col = col }, length = 0, window = 0 }
+    locations.jump_targets[len] = {
+      window = 0,
+      buffer = 0,
+      cursor = { row = row + 1, col = col, off = 0 },
+      length = 0,
+    }
     locations.indirect_jump_targets[len] = { index = len, score = len }
   end
 

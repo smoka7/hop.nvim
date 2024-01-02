@@ -1,0 +1,14 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+start
+
+abcd
+abcd测试
+abcd测试abcd测试
+abcd测试abcd测试ABCD测试
+abcd测试abcd测试ABCD测试ABCD测试
+abcd测试abcd测试ABCD测试
+abcd测试abcd测试
+abcd测试
+abcd
+
+end

@@ -32,8 +32,9 @@ describe('Hop with match mappings:', function()
     end)
   end)
 
-  it('hint_vertical,', function()
+  it('hint_vertical', function()
     vim.o.wrap = false
+    vim.wo[0].virtualedit = 'none'
     vim.api.nvim_win_set_cursor(0, { 1, 65 })
     local col = vim.fn.wincol()
 

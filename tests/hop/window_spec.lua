@@ -9,9 +9,13 @@ describe('Hop window:', function()
     local idx = hop_window.cell2char(line, cell)
     eq('d测试ABCD', vim.fn.strcharpart(line, idx))
 
+    cell = 6
+    idx = hop_window.cell2char(line, cell)
+    eq('试ABCD', vim.fn.strcharpart(line, idx))
+
     cell = 7
     idx = hop_window.cell2char(line, cell)
-    eq('ABCD', vim.fn.strcharpart(line, idx))
+    eq('试ABCD', vim.fn.strcharpart(line, idx))
 
     cell = 8
     idx = hop_window.cell2char(line, cell)
