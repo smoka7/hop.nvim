@@ -149,6 +149,10 @@ function M.get_input_pattern(prompt, maxchar, opts)
   ---@type string|nil
   local pat = ''
 
+  local timer = nil
+  local redraw = true
+  local timeout_reached = false
+
   while true do
     pat = vim.fn.join(pat_keys, '')
 
@@ -162,15 +166,19 @@ function M.get_input_pattern(prompt, maxchar, opts)
       end
     end
 
-    api.nvim_echo({}, false, {})
-    vim.cmd.redraw()
-    api.nvim_echo({ { prompt, 'Question' }, { pat } }, false, {})
+    if redraw then
+      api.nvim_echo({}, false, {})
+      vim.cmd.redraw()
+      api.nvim_echo({ { prompt, 'Question' }, { pat } }, false, {})
+    end
 
-    local ok, key = pcall(vim.fn.getcharstr)
+    local ok, key = pcall(vim.fn.getcharstr, 0)
     if not ok then -- Interrupted by <C-c>
       pat = nil
       break
     end
+
+    redraw = false
 
     if key == K_Esc then
       pat = nil
@@ -179,12 +187,28 @@ function M.get_input_pattern(prompt, maxchar, opts)
       break
     elseif key == K_BS or key == K_C_H then
       pat_keys[#pat_keys] = nil
-    else
+      redraw = true
+    elseif key ~= '' then
       pat_keys[#pat_keys + 1] = key
+      redraw = true
     end
 
-    if maxchar and #pat_keys >= maxchar then
+    if opts and opts.timeout then
+      if key ~= '' then
+        timeout_reached = false
+        if timer then timer:stop() end
+
+        timer = vim.loop.new_timer()
+        timer:start(opts.timeout, 0, function()
+          timeout_reached = true
+          timer:stop()
+        end)
+      end
+    end
+
+    if (maxchar and #pat_keys >= maxchar) or timeout_reached then
       pat = vim.fn.join(pat_keys, '')
+      redraw = true
       break
     end
   end

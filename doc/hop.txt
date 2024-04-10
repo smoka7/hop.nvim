@@ -851,6 +851,13 @@ below.
     Defaults:~
         `multi_windows = false`
 
+`timeout`                                                     *hop-config-timeout*
+    Starts a timer after the first valid key in pattern mode which submits the
+    query after `timeout` milliseconds if no other keys are pressed.
+
+    Defaults:~
+        `timeout = nil`
+
 `excluded_filetypes`
     Skip hinting windows with the excluded filetypes. Those windows to check
     filetypes are collected only when you enable `multi_windows` or execute
