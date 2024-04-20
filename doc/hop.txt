@@ -720,6 +720,16 @@ below.
     
     Defaults:~
         `x_bias = 10`
+            
+    `distance_method`                                  *hop-config-distance_method*
+    This Determines the method which hops uses to evaluate the distance between 
+    jump target and the cursor.
+
+    We currently provide two `manh_distance` and `readwise_distance`
+     distance methods in `hint` module.
+
+    Defaults:~
+        `distance_method = require('hop.hint').manh_distance`
 
 `teasing`                                                     *hop-config-teasing*
     Boolean value stating whether Hop should tease you when you do something
