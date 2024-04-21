@@ -54,7 +54,9 @@ This is a fork of the [original hop.nvim repo](https://github.com/phaazon/hop.nv
 {
     'smoka7/hop.nvim',
     version = "*",
-    opts = {},
+    opts = {
+        keys = 'etovxqpdygfblzhckisuran'
+    }
 }
 ```
 

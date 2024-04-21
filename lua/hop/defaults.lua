@@ -10,6 +10,7 @@ M.quit_key = '<Esc>'
 M.perm_method = require('hop.perm').TrieBacktrackFilling
 M.reverse_distribution = false
 M.x_bias = 10
+M.distance_method = hint.manh_distance
 M.teasing = true
 M.virtual_cursor = false
 M.jump_on_sole_occurrence = true

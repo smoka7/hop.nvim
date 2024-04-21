@@ -32,15 +32,6 @@ local window = require('hop.window')
 ---@class JumpTargetModule
 local M = {}
 
--- Manhattan distance with column and row, weighted on x so that results are more packed on y.
----@param a CursorPos
----@param b CursorPos
----@param x_bias number
----@return number
-local function manh_dist(a, b, x_bias)
-  return (x_bias * math.abs(b.row - a.row)) + math.abs(b.col - a.col)
-end
-
 -- Create jump targets within line
 ---@param jump_ctx JumpContext
 ---@param opts Options
@@ -113,10 +104,9 @@ local function create_line_indirect_jump_targets(jump_ctx, locations, opts)
   local win_bias = math.abs(vim.api.nvim_get_current_win() - jump_ctx.win_ctx.win_handle) * 1000
   for _, jump_target in pairs(line_jump_targets) do
     locations.jump_targets[#locations.jump_targets + 1] = jump_target
-
     locations.indirect_jump_targets[#locations.indirect_jump_targets + 1] = {
       index = #locations.jump_targets,
-      score = manh_dist(jump_ctx.win_ctx.cursor, jump_target.cursor, opts.x_bias) + win_bias,
+      score = opts.distance_method(jump_ctx.win_ctx.cursor, jump_target.cursor, opts.x_bias) + win_bias,
     }
   end
 end

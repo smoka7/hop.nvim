@@ -49,6 +49,25 @@ M.HintPriority = {
   CURSOR = 65535,
 }
 
+-- Manhattan distance with column and row, weighted on x so that results are more packed on y.
+---@param a CursorPos
+---@param b CursorPos
+---@param x_bias number
+---@return number
+function M.manh_distance(a, b, x_bias)
+  return (x_bias * math.abs(b.row - a.row)) + math.abs(b.col - a.col)
+end
+
+--- Distance method that prioritises hints based on the
+--- left to right reading distance
+---@param a CursorPos Cursor Position
+---@param b CursorPos Jump target position
+---@param x_bias number
+---@return number 
+function M.readwise_distance(a, b, x_bias)
+  return (100 * math.abs(b.row - a.row)) + (b.col - a.col)
+end
+
 -- Reduce a hint.
 -- This function will remove hints not starting with the input key and will reduce the other ones
 -- with one level.
