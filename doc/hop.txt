@@ -18,6 +18,7 @@ CONTENTS                                                          *hop-contents*
     Commands ···················································· |hop-commands|
     Lua API ······················································ |hop-lua-api|
     Jump target API ······································ |hop-jump-target-api|
+    Jump regex API ········································ |hop-jump-regex-api|
   Configuration ··················································· |hop-config|
   Extension ···················································· |hop-extension|
   Highlights ·················································· |hop-highlights|
@@ -243,6 +244,8 @@ unstable.
 `hop.hint`        Various functions to create, update and reduce hints.
 `hop.highlight`   Highlight functions (creation / autocommands / etc.).
 `hop.jump_target` Core module used to create jump targets.
+`hop.jump_regex`  Create regex for jump target generator.
+`hop.window`      Handle windows context.
 `hop.perm`        Permutation functions. Permutations are used as labels for
                 the hints.
 `hop-yank.yank`   Yank and paste functions
@@ -298,7 +301,26 @@ Most of the functions and values you need to know about are in `hop`.
         {jump_target_gtr} Jump target generator. See |hop-jump-target-api| for
                           further information.
         {opts}            User options.
+        {callback}        The callback function to be called after fully
+                          reduction of the jump targets.
 
+`hop.hint_with_regex(`                                       *hop.hint_with_regex*
+  {regex}`,`
+  {opts}`,`
+  {callback}
+`)`
+    Main entry-point of Hop, this function expects a {regex} and will call it
+    with {opts} to get a list of jump targets. This function will take care of
+    reducing the hints for you automatically. Once a jump target is reduced
+    completely, this function will call the {callback} with the selected jump
+    target.
+
+    Arguments:~
+        {regex}    Regex to create a jump target generator. See
+                   |hop-jump-regex-api| for further information.
+        {opts}     User options.
+        {callback} The callback function to be called after fully reduction of
+                   the jump targets.
 
 `hop.hint_words(`{opts}`)`                                          *hop.hint_words*
     Annotate all words in the current window with key sequences. Typing a
@@ -398,14 +420,44 @@ The hint API provide the `HintDirection` and `HintPosition`
         {MIDDLE} Create and apply hints at the middle of the match.
         {END}    Create and apply hints at the end of the match.
 
+`hop.hint.manh_distance(`                                 *hop.hint.manh_distance*
+  {a}`,`
+  {b}`,`
+  {x_bias}
+`)`
+    Manhattan distance between two cursor positions. Both {a} and {b} must be
+    tables containing two values: the first one for the line and the second one
+    for the column.
+
+    {x_bias} is to be used to skew the Manhattan distance in terms of lines.
+
+    Arguments:~
+        {a}      First position.
+        {b}      Second position.
+        {x_bias} Bias applied to the line distance.
+
+`hop.hint.readwise_distance(`                         *hop.hint.readwise_distance*
+  {a}`,`
+  {b}`,`
+  {x_bias}
+`)`
+    Left to right reading distance between two cursor positions. Both {a} and
+    {b} must be tables containing two values: the first one for the line and
+    the second one for the column.
+
+    {x_bias} is currently not used.
+
+    Arguments:~
+        {a}      First position.
+        {b}      Second position.
+        {x_bias} Bias applied to the line distance.
+
                                                            *hop-jump-target-api*
 Jump target API~
 
-The jump target API is probably the most core API of all. It provides some
-helper functions to help you extend Hop by providing your own jump targets.
-Most importantly, you will want to read this documentation section to know
-exactly which kind of format Hop expects for the jump targets when
-implementing your own.
+The jump target API is probably the most core API of all. You will want to read
+this documentation section to know exactly which kind of format Hop expects for
+the jump targets when implementing your own.
 
 Jump targets are locations in buffers where users might jump to. They are
 wrapped in a table and provide the required information so that Hop can
@@ -418,14 +470,18 @@ form:
     }
 >
 The `jump_targets` field is a list-table of jump targets. A single jump target
-is simply a location in a given window. Actually, the location will be set on
-the buffer that is being displayed by that window. So you can picture a jump
-target as a triple (line, column, window).
+is simply a location in a given window, with its buffer index and the length
+of the matched string for highlight. Actually, the location will be set on
+the buffer that is being displayed by that window.
 >
     {
-      line = 0,
-      column = 0,
       window = 0,
+      buffer = 0,
+      cursor = {
+        row = 0,
+        col = 0,
+      },
+      length = 0,
     }
 <
 `indirect_jump_targets` is an optional yet highly recommended table. They
@@ -452,8 +508,8 @@ such a table:
 >
     {
       jump_targets = {
-        { line = 1, column = 14, window = 0 },
-        { line = 2, column = 1, window = 0 },
+        { window = 0, buffer = 0, cursor = { row = 1, col = 14 }, length = 1 },
+        { window = 0, buffer = 0, cursor = { row = 2, col = 1  }, length = 1 },
       },
 
       indirect_jump_targets = {
@@ -469,53 +525,30 @@ with the indices ascending, you can completely omit the
 >
     {
       jump_targets = {
-        { line = 1, column = 14, window = 0 },
-        { line = 2, column = 1, window = 0 },
+        { window = 0, buffer = 0, cursor = { row = 1, col = 14 }, length = 1 },
+        { window = 0, buffer = 0, cursor = { row = 2, col = 1  }, length = 1 },
       },
     }
 <
-This module provides several functions, named `jump_targets_*`, which are
-called jump target generators. Such functions are to be passed to
-|hop.hint_with| or |hop.hint_with_callback|. Most of the Vim commands are already
-doing that for you.
+This module provides a function, named `jump_targets_generator`, which is called
+jump target generator. This function is to be passed to |hop.hint_with| or
+|hop.hint_with_callback|. There are several support functions to let you
+manipulate the results of jump targets.
 
-`hop.jump_target.jump_targets_by_scanning_line(` *hop.jump_target.jump_targets_by_scanning_line*
-  {regex}
+`hop.jump_target.jump_target_generator(` *hop.jump_target.jump_target_generator*
+  {regex}`,`
+  {win_ctxs}
 `)`
-    Jump target generator that scans lines of the currently visible buffer and
-    create the jump targets by using the input {regex}.
+    Jump target generator that scans lines of the given windows to create the
+    jump targets by using the input {regex} and {win_ctxs}. If `current_line_only`
+    is enabled, only the current line of the currently active window is scanned.
 
     Arguments:~
-        {regex} Regex-like table to apply to each line. See the various
-                `hop.jump_target.regex*` functions below for a list of available
-                options.
-
-                If you want to create your own regex-like table, you need to
-                provide a table with two fields: `oneshot`, a boolean value,
-                that is to be set to `true` if the regex should be applied
-                only once to each line, and `match`, which is the actual
-                matcher that returns the beginning / end
-                (inclusive / exclusive) byte indices of the match. You are
-                advised to use |vim.regex|.
-
-`hop.jump_target.jump_targets_for_current_line(` *hop.jump_target.jump_targets_for_current_line*
-  {regex}
-`)`
-    Jump target generator that applies {regex} only to the current line of the
-    currently active window.
-
-    Arguments:~
-        {regex} Regex-like table to apply to each line. See the various
-                `hop.jump_target.regex*` functions below for a list of available
-                options.
-
-                If you want to create your own regex-like table, you need to
-                provide a table with two fields: `oneshot`, a boolean value,
-                that is to be set to `true` if the regex should be applied to
-                each line only once, and `match`, which is the actual matcher
-                that returns the beginning / end (inclusive / exclusive) byte
-                indices of the match. You are advised to use |vim.regex|.
-
+        {regex}    Regex-like table to apply to each line. See the various
+                   |hop-jump-regex-api| functions for a list of available options.
+        {win_ctxs} A list of Window context table to be scanned. If the table
+                   is not provided, the |hop.window.get_windows_context| is
+                   called to create available windows context.
 
 `hop.jump_target.sort_indirect_jump_targets(` *hop.jump_target.sort_indirect_jump_targets*
   {indirect_jump_targets}`,`
@@ -527,60 +560,121 @@ doing that for you.
         {indirect_jump_targets} Indirect jump targets to sort.
         {opts}                  User options.
 
-`hop.jump_target.regex_by_searching(`         *hop.jump_target.regex_by_searching*
-  {pat}`,`
-  {plain_search}
+`hop.jump_target.move_jump_target(`             *hop.jump_target.move_jump_target*
+  {jt}`,`
+  {offset_row}`,`
+  {offset_cell}
 `)`
-    Buffer-line based |pattern| hint mode. This mode will highlight the
-    beginnings of a pattern you will be prompted for in the document and
-    will make the cursor jump to the one fully reduced.
+    Apply an offset on {jt} according to the giving offset. Always apply the
+    row offset first, and then apply cell offset.
 
     Arguments:~
-        {pat}          Pattern to search.
-        {plain_search} Should the pattern by plain-text.
+        {jt}          Jump target to apply offset.
+        {offset_row}  Row offset.
+        {offset_cell} Cell offset.
 
-`hop.jump_target.regex_by_case_searching(` *hop.jump_target.regex_by_case_searching*
+                                                            *hop-jump-regex-api*
+Jump regex API~
+
+The jump regex API offers various helper functions to create regexes required by
+|hop.jump_target.jump_target_generator|. This module also provides a function
+called `regex_by_case_searching`, expected to be passed into |hop.hint_with_regex|.
+This function assists you in expanding Hop by enabling the creation of custom
+search patterns for your own jump targets.
+
+If you want to create your own regex-like table, you need to provide a table
+with two fields: `oneshot`, a boolean value, that is to be set to `true` if the
+regex should be applied only once to each line, and `match`, which is the actual
+matcher that returns the beginning / end (inclusive / exclusive) byte indices
+of the match. You are advised to use |vim.regex|.
+
+`hop.jump_regex.regex_by_case_searching(` *hop.jump_regex.regex_by_case_searching*
   {pat}`,`
   {plain_search}`,`
   {opts}
 `)`
-    Similar to |hop.jump_target.regex_by_searching|, but respects the user case
-    sensitivity set by 'smartcase' and |hop-config-case_insensitive|.
+    Create regex by the given Neovim |search-pattern|, {pat}. If the
+    {plain_search} is true, the {pat} is recongized as plain text instead of
+    regex. This function respects the user case sensitivity set by 'smartcase'
+    and |hop-config-case_insensitive|.
 
     Arguments:~
         {pat}          Pattern to search.
         {plain_search} Should the pattern by plain-text.
         {opts}         User options.
 
-`hop.jump_target.regex_by_word_start()`      *hop.jump_target.regex_by_word_start*
-    Buffer-line based |word| hint mode. This mode will highlight the beginnings
-    of all the words in the window and will make the cursor jump to the one
-    fully reduced.
+`hop.jump_regex.regex_by_word_start()`        *hop.jump_regex.regex_by_word_start*
+    Create regex for matching |word|. This pattern matches the beginnings of
+    all the words in the windows.
 
-`hop.jump_target.by_line_start()`                  *hop.jump_target.by_line_start*
-    Highlight the beginning of each line in the current window.
+`hop.jump_regex.regex_by_camel_case()`        *hop.jump_regex.regex_by_camel_case*
+    Create regex for matching camel cases of words. This pattern matches the
+    beginnings of all the words and the camel cases of the words in the windows.
 
-`hop.jump_target.regex_by_line_start_skip_whitespace()` *hop.jump_target.regex_by_line_start_skip_whitespace*
-    Highlight the non-whitespace character of each line in the current window.
+`hop.jump_regex.by_line_start()`                    *hop.jump_regex.by_line_start*
+    Create regex for matching start of a line. This pattern matches the column
+    1 of each line in the windows.
 
-`hop.jump_target.regex_by_anywhere()`          *hop.jump_target.regex_by_anywhere*
-    Highlight the anywhere in the current window.
+`hop.jump_regex.by_vertical()`                        *hop.jump_regex.by_vertical*
+    Create regex for matching vertical positions of the current cursor column.
+    This pattern matches the character positioned at the same column number as
+    the cursor across each line in the windows.
 
-`hop.jump_target.manh_dist(`                           *hop.jump_target.manh_dist*
-  {a}`,`
-  {b}`,`
-  {x_bias}
-`)`
-    Manhattan distance between two buffer positions. Both {a} and {b} must be
-    tables containing two values: the first one for the line and the second one
-    for the column.
+`hop.jump_regex.regex_by_line_start_skip_whitespace()` *hop.jump_regex.regex_by_line_start_skip_whitespace*
+    Create regex for matching non-whitespace start of a line. This pattern
+    matches the first non-whitespace character of each line in the windows.
 
-    {x_bias} is to be used to skew the Manhattan distance in terms of lines.
+`hop.jump_regex.regex_by_anywhere()`            *hop.jump_regex.regex_by_anywhere*
+    Create regex for matching anywhere in the windows.
+
+Window API~
+
+The window API handles the windows and their context.
+
+`hop.window.get_windows_context(`{opts}`)`          *hop.window.get_windows_context*
+    Get a list of all windows context. The current window context will be
+    the first element in the list regardless of the options, {opts}. If
+    `multi_windows` is true, other windows context of current tab will be added
+    to the list except the filetype of windows matching filetypes set in
+    `excluded_filetypes`.
 
     Arguments:~
-        {a}      First position.
-        {b}      Second position.
-        {x_bias} Optional bias applied to the line distance. Defaults to 10.
+        {opts} User options.
+
+`hop.window.get_lines_context(`{win_ctx}`)`           *hop.window.get_lines_context*
+    Get the lines context of giving window context, {win_ctx}.
+
+    Arguments:~
+        {win_ctx} Window context.
+
+`hop.window.is_active_window(`{win_ctx}`)`             *hop.window.is_active_window*
+    Return true if the given window context, {win_ctx}, is current window.
+
+    Arguments:~
+        {win_ctx} Window context.
+
+`hop.window.is_cursor_line(`                           *hop.window.is_cursor_line*
+  {win_ctx}`,`
+  {line_ctx}
+`)`                 
+    Return true if the cursor of the given window context, {win_ctx}, and the
+    given line context, {line_ctx}, locate at the same row.
+
+    Arguments:~
+        {win_ctx}  Window context.
+        {line_ctx} Line context.
+
+`hop.window.is_active_line(`                           *hop.window.is_active_line*
+  {win_ctx}`,`
+  {line_ctx}
+`)`                 
+    Return true if the given window context, {win_ctx}, is current window, and
+    the cursor of the given window context, {win_ctx}, as well as the given
+    line context, {line_ctx}, locate at the same row.
+
+    Arguments:~
+        {win_ctx}  Window context.
+        {line_ctx} Line context.
 
 Highlight API~
 
@@ -591,7 +685,7 @@ The highlight API gives two functions to manipulate the highlights Hop uses:
     See |hop-highlights| for further details about the list of highlights
     currently available.
 
-`hop.highlight.create_autocmd`                      *hop.highlight.create_autocmd*
+`hop.highlight.create_autocmd()`                    *hop.highlight.create_autocmd*
     Register autocommands for the `ColorScheme` event, calling
     |hop.highlight.insert_highlights|. This is called when you require Hop and
     you shouldn’t need to call this function by yourself.
@@ -709,7 +803,7 @@ below.
     Defaults:~
         `reverse_distribution = false`
 
-`x_bias`                                                     *hop-config-x_bias*
+`x_bias`                                                       *hop-config-x_bias*
     This Determines which hints get shorter key sequences. The default value
     has a more balanced distribution around the cursor but increasing it
     means that hints which are closer vertically will have a shorter key
@@ -721,12 +815,12 @@ below.
     Defaults:~
         `x_bias = 10`
             
-    `distance_method`                                  *hop-config-distance_method*
+`distance_method`                                     *hop-config-distance_method*
     This Determines the method which hops uses to evaluate the distance between 
     jump target and the cursor.
 
-    We currently provide two `manh_distance` and `readwise_distance`
-     distance methods in `hint` module.
+    We currently provide two |hop.hint.manh_distance| and
+    |hop.hint.readwise_distance| distance methods in `hint` API.
 
     Defaults:~
         `distance_method = require('hop.hint').manh_distance`
@@ -895,8 +989,8 @@ part of the core of Hop. If you want to write a Hop extension, this section
 should provide all the required informations.
 
 The first important part is to know how to generate jump targets. You will
-then first want to read the |hop-jump-target-api|, that describes this process
-in terms of Lua protocol.
+then first want to read the |hop-jump-target-api| and |hop-jump-regex-api|,
+those describe this process in terms of Lua protocol.
 
 The second part is that because you will depend on the Hop API, you need to be
 sure that Hop is completely setup before initiating your Hop extension plugin.
