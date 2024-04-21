@@ -862,15 +862,12 @@ below.
         `multi_windows = false`
 
 `windows_list`                                           *hop-config-windows_list*
-    List-table of windows to jump to. When `multi_windows` is enabled, only
-    the windows on the list will be hint. You can write a function to exclude
-    the windows you don't want to jump to.
+    A function returns a list-table of windows to jump to. When `multi_windows`
+    is enabled, only the windows on the list will be hint.
 
-    Defaults:~ >lua
+    Defaults:~ >
         windows_list = function ()
-          return vim.tbl_filter(function (w)
-            return vim.api.nvim_win_get_config(w).focusable
-          end, vim.api.nvim_tabpage_list_wins(0))
+          return vim.api.nvim_tabpage_list_wins(0)
         end
 <
 `excluded_filetypes`

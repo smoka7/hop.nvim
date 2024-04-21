@@ -163,7 +163,8 @@ function M.get_windows_context(opts)
   -- Get the context for all the windows in current tab
   for _, w in ipairs(opts.windows_list()) do
     local valid_win = api.nvim_win_is_valid(w)
-    if valid_win and w ~= cur_hwin then
+    local focusable_win = vim.api.nvim_win_get_config(w).focusable
+    if valid_win and focusable_win and w ~= cur_hwin then
       local b = api.nvim_win_get_buf(w)
 
       -- Skips current window and excluded filetypes
