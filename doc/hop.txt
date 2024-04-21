@@ -945,16 +945,25 @@ below.
         `extensions = nil`
 
 `multi_windows`                                         *hop-config-multi_windows*
-    Enable cross-windows support and hint all the currently visible windows.
-    This behavior allows you to jump around any position in any buffer
-    currently visible in a window. Although a powerful a feature, remember
-    that enabling this will also generate many more sequence combinations, so
-    you could get deeper sequences to type (most of the time it should be good
-    if you have enough keys in |hop-config-keys|).
+    Enable cross-windows support and hint all the windows listed in
+    `windows_list`. This behavior allows you to jump around any position in any
+    buffer currently visible in an editor. Although a powerful a feature,
+    remember that enabling this will also generate many more sequence
+    combinations, so you could get deeper sequences to type (most of the time
+    it should be good if you have enough keys in |hop-config-keys|).
 
     Defaults:~
         `multi_windows = false`
 
+`windows_list`                                           *hop-config-windows_list*
+    A function returns a list-table of windows to jump to. When `multi_windows`
+    is enabled, only the windows on the list will be hint.
+
+    Defaults:~ >
+        windows_list = function ()
+          return vim.api.nvim_tabpage_list_wins(0)
+        end
+<
 `excluded_filetypes`
     Skip hinting windows with the excluded filetypes. Those windows to check
     filetypes are collected only when you enable `multi_windows` or execute
