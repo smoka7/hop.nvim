@@ -420,6 +420,38 @@ The hint API provide the `HintDirection` and `HintPosition`
         {MIDDLE} Create and apply hints at the middle of the match.
         {END}    Create and apply hints at the end of the match.
 
+`hop.hint.manh_distance(`                                 *hop.hint.manh_distance*
+  {a}`,`
+  {b}`,`
+  {x_bias}
+`)`
+    Manhattan distance between two cursor positions. Both {a} and {b} must be
+    tables containing two values: the first one for the line and the second one
+    for the column.
+
+    {x_bias} is to be used to skew the Manhattan distance in terms of lines.
+
+    Arguments:~
+        {a}      First position.
+        {b}      Second position.
+        {x_bias} Bias applied to the line distance.
+
+`hop.hint.readwise_distance(`                         *hop.hint.readwise_distance*
+  {a}`,`
+  {b}`,`
+  {x_bias}
+`)`
+    Left to right reading distance between two cursor positions. Both {a} and
+    {b} must be tables containing two values: the first one for the line and
+    the second one for the column.
+
+    {x_bias} is currently not used.
+
+    Arguments:~
+        {a}      First position.
+        {b}      Second position.
+        {x_bias} Bias applied to the line distance.
+
                                                            *hop-jump-target-api*
 Jump target API~
 
@@ -771,7 +803,7 @@ below.
     Defaults:~
         `reverse_distribution = false`
 
-`x_bias`                                                     *hop-config-x_bias*
+`x_bias`                                                       *hop-config-x_bias*
     This Determines which hints get shorter key sequences. The default value
     has a more balanced distribution around the cursor but increasing it
     means that hints which are closer vertically will have a shorter key
@@ -783,12 +815,12 @@ below.
     Defaults:~
         `x_bias = 10`
             
-    `distance_method`                                  *hop-config-distance_method*
+`distance_method`                                     *hop-config-distance_method*
     This Determines the method which hops uses to evaluate the distance between 
     jump target and the cursor.
 
-    We currently provide two `manh_distance` and `readwise_distance`
-     distance methods in `hint` module.
+    We currently provide two |hop.hint.manh_distance| and
+    |hop.hint.readwise_distance| distance methods in `hint` API.
 
     Defaults:~
         `distance_method = require('hop.hint').manh_distance`
