@@ -18,6 +18,7 @@ M.case_insensitive = true
 M.create_hl_autocmd = true
 M.current_line_only = false
 M.dim_unmatched = true
+M.hl_mode = "combine"
 M.uppercase_labels = false
 M.multi_windows = false
 M.windows_list = function ()

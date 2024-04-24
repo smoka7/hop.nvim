@@ -874,6 +874,15 @@ below.
     Defaults:~
         `dim_unmatched = true`
 
+`hl_mode`                                                     *hop-config-hl_mode*
+    Highlight mode of the hint chars. Set this option to `combine` will
+    preserve the background colors of original chars. Set this option to
+    `replace` will remove the background colors of original chars. It's useful
+    when the hint chars is not clear on search highlights.
+
+    Defaults:~
+        `dim_unmatched = "combine"`
+
 `direction`                                                 *hop-config-direction*
     Direction in which to hint. See |hop.hint.HintDirection| for further
     details.
