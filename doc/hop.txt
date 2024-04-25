@@ -881,7 +881,7 @@ below.
     when the hint chars is not clear on search highlights.
 
     Defaults:~
-        `dim_unmatched = "combine"`
+        `hl_mode = "combine"`
 
 `direction`                                                 *hop-config-direction*
     Direction in which to hint. See |hop.hint.HintDirection| for further
