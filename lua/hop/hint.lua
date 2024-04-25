@@ -202,7 +202,7 @@ function M.set_hint_extmarks(hl_ns, hints, opts)
     api.nvim_buf_set_extmark(hint.jump_target.buffer, hl_ns, row, col, {
       virt_text = virt_text,
       virt_text_pos = opts.hint_type,
-      hl_mode = 'combine',
+      hl_mode = opts.hl_mode,
       priority = M.HintPriority.HINT,
     })
   end
