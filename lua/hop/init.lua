@@ -471,6 +471,14 @@ function M.hint_lines_skip_whitespace(opts)
 end
 
 ---@param opts Options
+function M.hint_empty_line(opts)
+  local jump_regex = require('hop.jump_regex')
+
+  opts = override_opts(opts)
+  M.hint_with_regex(jump_regex.regex_empty_line(), opts)
+end
+
+---@param opts Options
 function M.hint_anywhere(opts)
   local jump_regex = require('hop.jump_regex')
 
