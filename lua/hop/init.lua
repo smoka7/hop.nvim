@@ -308,10 +308,19 @@ function M.hint_with_callback(jump_target_gtr, opts, callback)
     end
 
     -- If this is a key used in Hop (via opts.keys), deal with it in Hop
+    -- elseif this key is the repeat_key, draw previous hints
     -- otherwise quit Hop
     if not_special_key and opts.keys:find(key, 1, true) then
       h = M.refine_hints(key, hs, callback, opts)
       vim.cmd.redraw()
+    elseif key == api.nvim_replace_termcodes(opts.repeat_key, true, false, true) then
+      if #hs.history > 0 then
+        hs.hints = table.remove(hs.history)
+        clear_namespace(hs.buf_list, hs.hl_ns)
+        apply_dimming(hs, opts)
+        hint.set_hint_extmarks(hs.hl_ns, hs.hints, opts)
+        vim.cmd.redraw()
+      end
     else
       M.quit(hs)
       -- If the captured key is not the quit_key, pass it through
@@ -330,6 +339,9 @@ end
 -- the location. Otherwise, it stores the new state machine.
 function M.refine_hints(key, hint_state, callback, opts)
   local hint = require('hop.hint')
+
+  -- Save the current hint state to history
+  table.insert(hint_state.history, vim.deepcopy(hint_state.hints))
 
   local h, hints = hint.reduce_hints(hint_state.hints, key)
 
