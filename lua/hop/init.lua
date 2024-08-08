@@ -93,6 +93,19 @@ local function add_virt_cur(ns)
   end
 end
 
+--- verify that column value is always smaller than line length
+---@param wctx WindowContext
+local function sanitize_cols(wctx)
+  local start_line = api.nvim_buf_get_lines(wctx.buf_handle, wctx.line_range[1], wctx.line_range[1] + 1, false)
+  if #start_line < wctx.column_range[1] then
+    wctx.column_range[1] = #start_line
+  end
+  local end_line = api.nvim_buf_get_lines(wctx.buf_handle, wctx.line_range[2], wctx.line_range[2] + 1, false)
+  if #end_line < wctx.column_range[2] then
+    wctx.column_range[2] = #end_line
+  end
+end
+
 -- Dim everything out to prepare the hop session for all windows
 ---@param hint_state HintState
 ---@param opts Options
@@ -106,6 +119,7 @@ local function apply_dimming(hint_state, opts)
 
   for _, wctx in ipairs(hint_state.all_ctxs) do
     -- Set the highlight of unmatched lines of the buffer.
+    sanitize_cols(wctx)
     local start_line, end_line = window.line_range2extmark(wctx.line_range)
     local start_col, end_col = window.column_range2extmark(wctx.column_range)
     api.nvim_buf_set_extmark(wctx.buf_handle, hint_state.dim_ns, start_line, start_col, {
