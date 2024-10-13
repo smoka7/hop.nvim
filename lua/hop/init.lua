@@ -392,6 +392,14 @@ function M.hint_words(opts)
 end
 
 ---@param opts Options
+function M.hint_ws(opts)
+  local jump_regex = require('hop.jump_regex')
+
+  opts = override_opts(opts)
+  M.hint_with_regex(jump_regex.regex_by_w_start(), opts)
+end
+
+---@param opts Options
 function M.hint_camel_case(opts)
   local jump_regex = require('hop.jump_regex')
 
