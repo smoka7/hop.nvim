@@ -31,5 +31,6 @@ M.hint_type = hint.HintType.OVERLAY ---@type HintType
 M.excluded_filetypes = {}
 M.match_mappings = {}
 M.extensions = { 'hop-yank', 'hop-treesitter' }
+M.exclude_cursor = false
 
 return M
