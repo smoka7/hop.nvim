@@ -103,11 +103,14 @@ local function create_line_indirect_jump_targets(jump_ctx, locations, opts)
   -- then, append those to the input jump target list and create the indexed jump targets
   local win_bias = math.abs(vim.api.nvim_get_current_win() - jump_ctx.win_ctx.win_handle) * 1000
   for _, jump_target in pairs(line_jump_targets) do
-    locations.jump_targets[#locations.jump_targets + 1] = jump_target
-    locations.indirect_jump_targets[#locations.indirect_jump_targets + 1] = {
-      index = #locations.jump_targets,
-      score = opts.distance_method(jump_ctx.win_ctx.cursor, jump_target.cursor, opts.x_bias) + win_bias,
-    }
+    local score = opts.distance_method(jump_ctx.win_ctx.cursor, jump_target.cursor, opts.x_bias) + win_bias
+    if score ~= 0 then
+      locations.jump_targets[#locations.jump_targets + 1] = jump_target
+      locations.indirect_jump_targets[#locations.indirect_jump_targets + 1] = {
+        index = #locations.jump_targets,
+        score = score,
+      }
+    end
   end
 end
 
