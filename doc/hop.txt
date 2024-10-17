@@ -893,14 +893,6 @@ below.
     Defaults:~
         `direction = nil`
 
-`exclude_cursor`                                    *hop-config-exclude_cursor*
-    Whether to hide targets under the cursor. This is based on the score of
-    the target, so if you define a custom distance method that assigns 0 to
-    other locations, those will be excluded instead.
-
-    Defaults:~
-        `exclude_cursor = false`
-
 `hint_position`                                         *hop-config-hint_position*
     Position of hint in match. See |hop.hint.HintPosition| for further
     details.
