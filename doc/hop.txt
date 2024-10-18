@@ -332,6 +332,18 @@ Most of the functions and values you need to know about are in `hop`.
     Arguments:~
         {opts}  Hop options.
 
+`hop.hint_ws(`{opts}`)`                                          *hop.hint_ws*
+    Like |hop.hint_words| but matches the behavior of vim's w motion. This is
+    different from just matching on words because the w motion treats
+    collections of non-word characters as units that you can jump to. For
+    example, if you use the w motion to jump through the text "abc.!?def" the
+    cursor will move from the "a" to the "." then to the "d". Using
+    |hop.hint_words| you'd only be able to targe the "a" and the "d"
+    characters. Using |hop.hint_ws| you can target "a", ".", or "d".
+
+    Arguments:~
+        {opts}  Hop options.
+
 `hop.hint_patterns(`{opts}`,` {pattern}`)`                         *hop.hint_patterns*
     Annotate all matched patterns in the current window with key sequences.
 
@@ -606,6 +618,13 @@ of the match. You are advised to use |vim.regex|.
 `hop.jump_regex.regex_by_word_start()`        *hop.jump_regex.regex_by_word_start*
     Create regex for matching |word|. This pattern matches the beginnings of
     all the words in the windows.
+
+`hop.jump_regex.regex_by_w_start()`        *hop.jump_regex.regex_by_w_start*
+    Regex that matches the behavior of vim's w motion. This is different from
+    just matching on words because the w motion treats collections of non-word
+    characters as units that you can jump to. For example, if you use the w
+    motion to jump through the text "abc.!?def" the cursor will move from the
+    "a" to the "." then to the "d".
 
 `hop.jump_regex.regex_by_camel_case()`        *hop.jump_regex.regex_by_camel_case*
     Create regex for matching camel cases of words. This pattern matches the
