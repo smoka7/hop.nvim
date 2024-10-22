@@ -169,6 +169,23 @@ function M.regex_by_line_start_skip_whitespace()
   }
 end
 
+-- Line regex skipping finding the first non-whitespace character on each line.
+---@return Regex
+function M.regex_empty_line()
+  local regex = vim.regex('^\\s*$')
+
+  return {
+    oneshot = true,
+    ---@param jctx JumpContext
+    match = function(s, jctx)
+      if window.is_active_line(jctx.win_ctx, jctx.line_ctx) then
+        return
+      end
+      return regex:match_str(s)
+    end,
+  }
+end
+
 -- Anywhere regex.
 ---@return Regex
 function M.regex_by_anywhere()
