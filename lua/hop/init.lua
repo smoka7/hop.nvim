@@ -223,9 +223,17 @@ function M.move_cursor_to(jt, opts)
   local hint = require('hop.hint')
   local jump_target = require('hop.jump_target')
 
-  -- If it is pending for operator shift pos.col to the right by 1
-  if api.nvim_get_mode().mode == 'no' and opts.direction ~= hint.HintDirection.BEFORE_CURSOR then
-    jt.cursor.col = jt.cursor.col + 1
+  -- If it is pending for operator, make sure we include the entire selection
+  if api.nvim_get_mode().mode == 'no' then
+    if opts.forced_motion then
+      vim.cmd('normal! ' .. opts.forced_motion)
+    elseif opts.direction == hint.HintDirection.AFTER_CURSOR then
+      -- This lines up with how the f and t motions work
+      vim.cmd('normal! v')
+    elseif opts.direction == hint.HintDirection.BEFORE_CURSOR then
+      -- This lines up with how the F and T motions work
+      vim.cmd('normal! <C-V>')
+    end
   end
 
   jump_target.move_jump_target(jt, 0, opts.hint_offset)

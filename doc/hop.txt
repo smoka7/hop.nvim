@@ -933,6 +933,21 @@ below.
     Defaults:~
         `current_line_only = false`
 
+`forced_motion`                                 *hop-config-forced_motion*
+    When applying Hop commands in operator mode, control the type of motion
+    that Hop should emulate. The Neovim docs for |forced-motion| explain the
+    options. For example, `forced_motion = "V"` will turn the motion into a
+    linewise motion while `forced_motion = "v"` will turn the motion into a
+    charwise motion. this is very useful with jumps that target lines such as
+    |hop.hint_vertical| or |hop.hint_lines| so that you can make them
+    linewise. If `nil`, the motion will try force the motion to be charwise if
+    the direction is after the cursor and blockwise if the direction is before
+    the cursor. This lines up with how Neovim normally handles the f/t/F/T
+    commands.
+
+    Defaults:~
+        `forced_motion = nil`
+
 `uppercase_labels`                                   *hop-config-uppercase_labels*
     Display labels as uppercase. This option only affects the displayed
     labels; you still select them by typing the keys on your keyboard.
