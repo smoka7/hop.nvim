@@ -223,11 +223,6 @@ function M.move_cursor_to(jt, opts)
   local hint = require('hop.hint')
   local jump_target = require('hop.jump_target')
 
-  -- If it is pending for operator shift pos.col to the right by 1
-  if api.nvim_get_mode().mode == 'no' and opts.direction ~= hint.HintDirection.BEFORE_CURSOR then
-    jt.cursor.col = jt.cursor.col + 1
-  end
-
   jump_target.move_jump_target(jt, 0, opts.hint_offset)
 
   -- Update the jump list
@@ -243,11 +238,36 @@ function M.move_cursor_to(jt, opts)
 
   -- only specialize for operator pending mode if jumping to the same buffer
   if jt.buffer == vim.fn.bufnr('%') then
-    -- If operator pending, first check if a visual mode should be set
+    -- first check if the mode should be updated
     if mode == 'no' then
       if opts.visual_mode ~= nil then
         vim.cmd([[noautocmd normal! ]] .. opts.visual_mode)
       end
+      mode = vim.fn.mode(true)
+    end
+    -- If still only operator pending, make the motion inclusive
+    if mode == 'no' then
+      vim.cmd[[noautocmd normal! v]]
+    elseif mode == 'nov' then -- make exclusive, :help o_v
+      local _, lineno, col, _ = unpack(vim.fn.getpos('.'))
+      if jt.cursor.row < lineno or jt.cursor.row == lineno and jt.cursor.col < col then -- hopping backwards
+        -- go to the character just after the jump target
+        local line = vim.fn.getline(jt.cursor.row)
+        if vim.fn.charidx(line, jt.cursor.col) == vim.fn.strchars(line) - 1 then
+          jt.cursor.col = #line
+        else
+          jump_target.move_jump_target(jt, 0, 1)
+        end
+      end
+      if jt.cursor.row > lineno or jt.cursor.row == lineno and jt.cursor.col > col then -- hopping forwards
+        -- go to the character just before the jump target
+        if jt.cursor.col == 0 then
+          jump_target.move_jump_target(jt, -1, vim.v.maxcol)
+        else
+          jump_target.move_jump_target(jt, 0, -1)
+        end
+      end
+      vim.cmd[[noautocmd normal! v]]
     end
   end
 
