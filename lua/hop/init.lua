@@ -465,12 +465,21 @@ function M.hint_lines(opts)
   local jump_regex = require('hop.jump_regex')
 
   opts = override_opts(opts)
+
+  if vim.fn.mode(true) == 'no' then
+    vim.cmd[[noautocmd normal! V]]
+  end
+
   M.hint_with_regex(jump_regex.by_line_start(), opts)
 end
 
 ---@param opts Options
 function M.hint_vertical(opts)
   local jump_regex = require('hop.jump_regex')
+
+  if vim.fn.mode(true) == 'no' then
+    vim.cmd[[noautocmd normal! V]]
+  end
 
   opts = override_opts(opts)
   M.hint_with_regex(jump_regex.regex_by_vertical(), opts)
@@ -479,6 +488,10 @@ end
 ---@param opts Options
 function M.hint_lines_skip_whitespace(opts)
   local jump_regex = require('hop.jump_regex')
+
+  if vim.fn.mode(true) == 'no' then
+    vim.cmd[[noautocmd normal! V]]
+  end
 
   opts = override_opts(opts)
   M.hint_with_regex(jump_regex.regex_by_line_start_skip_whitespace(), opts)
