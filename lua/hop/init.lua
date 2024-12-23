@@ -223,11 +223,6 @@ function M.move_cursor_to(jt, opts)
   local hint = require('hop.hint')
   local jump_target = require('hop.jump_target')
 
-  -- If it is pending for operator shift pos.col to the right by 1
-  if api.nvim_get_mode().mode == 'no' and opts.direction ~= hint.HintDirection.BEFORE_CURSOR then
-    jt.cursor.col = jt.cursor.col + 1
-  end
-
   jump_target.move_jump_target(jt, 0, opts.hint_offset)
 
   -- Update the jump list
@@ -235,7 +230,47 @@ function M.move_cursor_to(jt, opts)
   api.nvim_set_current_win(jt.window)
   --local cursor = api.nvim_win_get_cursor(0)
   --api.nvim_buf_set_mark(jt.buffer, "'", cursor[1], cursor[2], {})
+
+  -- we must check the mode before the normal! m' line, which can change it
+  local mode = vim.fn.mode(true)
+
   vim.cmd("normal! m'")
+
+  -- only specialize for operator pending mode if jumping to the same buffer
+  if jt.buffer == vim.fn.bufnr('%') then
+    -- first check if the mode should be updated
+    if mode == 'no' then
+      if opts.visual_mode ~= nil then
+        vim.cmd([[noautocmd normal! ]] .. opts.visual_mode)
+      end
+      mode = vim.fn.mode(true)
+    end
+    -- If still only operator pending, make the motion inclusive
+    if mode == 'no' then
+      vim.cmd[[noautocmd normal! v]]
+    elseif mode == 'nov' then -- make exclusive, :help o_v
+      local _, lineno, col, _ = unpack(vim.fn.getpos('.'))
+      if jt.cursor.row < lineno or jt.cursor.row == lineno and jt.cursor.col < col then -- hopping backwards
+        -- go to the character just after the jump target
+        local line = vim.fn.getline(jt.cursor.row)
+        if vim.fn.charidx(line, jt.cursor.col) == vim.fn.strchars(line) - 1 then
+          jt.cursor.col = #line
+        else
+          jump_target.move_jump_target(jt, 0, 1)
+        end
+      end
+      if jt.cursor.row > lineno or jt.cursor.row == lineno and jt.cursor.col > col then -- hopping forwards
+        -- go to the character just before the jump target
+        if jt.cursor.col == 0 then
+          jump_target.move_jump_target(jt, -1, vim.v.maxcol)
+        else
+          jump_target.move_jump_target(jt, 0, -1)
+        end
+      end
+      vim.cmd[[noautocmd normal! v]]
+    end
+  end
+
   api.nvim_win_set_cursor(jt.window, { jt.cursor.row, jt.cursor.col })
 end
 
@@ -465,6 +500,8 @@ function M.hint_lines(opts)
   local jump_regex = require('hop.jump_regex')
 
   opts = override_opts(opts)
+  opts.visual_mode = opts.visual_mode or 'V'
+
   M.hint_with_regex(jump_regex.by_line_start(), opts)
 end
 
@@ -473,6 +510,8 @@ function M.hint_vertical(opts)
   local jump_regex = require('hop.jump_regex')
 
   opts = override_opts(opts)
+  opts.visual_mode = opts.visual_mode or 'V'
+
   M.hint_with_regex(jump_regex.regex_by_vertical(), opts)
 end
 
@@ -481,6 +520,8 @@ function M.hint_lines_skip_whitespace(opts)
   local jump_regex = require('hop.jump_regex')
 
   opts = override_opts(opts)
+  opts.visual_mode = opts.visual_mode or 'V'
+
   M.hint_with_regex(jump_regex.regex_by_line_start_skip_whitespace(), opts)
 end
 
