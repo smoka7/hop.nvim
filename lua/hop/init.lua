@@ -235,7 +235,22 @@ function M.move_cursor_to(jt, opts)
   api.nvim_set_current_win(jt.window)
   --local cursor = api.nvim_win_get_cursor(0)
   --api.nvim_buf_set_mark(jt.buffer, "'", cursor[1], cursor[2], {})
+
+  -- we must check the mode before the normal! m' line, which can change it
+  local mode = vim.fn.mode(true)
+
   vim.cmd("normal! m'")
+
+  -- only specialize for operator pending mode if jumping to the same buffer
+  if jt.buffer == vim.fn.bufnr('%') then
+    -- If operator pending, first check if a visual mode should be set
+    if mode == 'no' then
+      if opts.visual_mode ~= nil then
+        vim.cmd([[noautocmd normal! ]] .. opts.visual_mode)
+      end
+    end
+  end
+
   api.nvim_win_set_cursor(jt.window, { jt.cursor.row, jt.cursor.col })
 end
 
@@ -465,10 +480,7 @@ function M.hint_lines(opts)
   local jump_regex = require('hop.jump_regex')
 
   opts = override_opts(opts)
-
-  if vim.fn.mode(true) == 'no' then
-    vim.cmd[[noautocmd normal! V]]
-  end
+  opts.visual_mode = opts.visual_mode or 'V'
 
   M.hint_with_regex(jump_regex.by_line_start(), opts)
 end
@@ -477,11 +489,9 @@ end
 function M.hint_vertical(opts)
   local jump_regex = require('hop.jump_regex')
 
-  if vim.fn.mode(true) == 'no' then
-    vim.cmd[[noautocmd normal! V]]
-  end
-
   opts = override_opts(opts)
+  opts.visual_mode = opts.visual_mode or 'V'
+
   M.hint_with_regex(jump_regex.regex_by_vertical(), opts)
 end
 
@@ -489,11 +499,9 @@ end
 function M.hint_lines_skip_whitespace(opts)
   local jump_regex = require('hop.jump_regex')
 
-  if vim.fn.mode(true) == 'no' then
-    vim.cmd[[noautocmd normal! V]]
-  end
-
   opts = override_opts(opts)
+  opts.visual_mode = opts.visual_mode or 'V'
+
   M.hint_with_regex(jump_regex.regex_by_line_start_skip_whitespace(), opts)
 end
 
