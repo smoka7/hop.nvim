@@ -18,7 +18,7 @@ function M.checkout(pat, opts)
     end
 
     if dict_char_pat ~= '' then
-      dict_pat = dict_pat .. '[' .. dict_char_pat .. ']'
+      dict_pat = dict_pat .. '[' .. vim.fn.escape(dict_char_pat, ']^-\\') .. ']'
     end
   end
 
