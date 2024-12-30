@@ -230,10 +230,9 @@ function M.move_cursor_to(jt, opts)
     elseif opts.direction == hint.HintDirection.AFTER_CURSOR then
       -- This lines up with how the f and t motions work
       vim.cmd('normal! v')
-    elseif opts.direction == hint.HintDirection.BEFORE_CURSOR then
-      -- This lines up with how the F and T motions work
-      vim.cmd('normal! <C-V>')
     end
+    -- The default is exclusive so there's no need to adjust the mode when
+    -- moving before the cursor.
   end
 
   jump_target.move_jump_target(jt, 0, opts.hint_offset)
