@@ -54,10 +54,8 @@ end
 ---@return Regex
 function M.regex_by_case_searching(pat, plain_search, opts)
   local pat_case = ''
-  if opts.case_insensitive then
-    if vim.o.smartcase and not starts_with_uppercase(pat) then
-      pat_case = '\\c'
-    end
+  if opts.case_insensitive and not (vim.o.smartcase and starts_with_uppercase(pat)) then
+    pat_case = '\\c'
   end
   local pat_mappings = mappings.checkout(pat, opts)
 
