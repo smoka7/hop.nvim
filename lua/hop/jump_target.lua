@@ -154,15 +154,15 @@ function M.move_jump_target(jt, offset_row, offset_cell)
 
   if dcell ~= 0 then
     local line = vim.api.nvim_buf_get_lines(jt.buffer, jt.cursor.row - 1, jt.cursor.row, false)[1]
-    local line_cells = vim.fn.strdisplaywidth(line)
+    local line_chars = vim.fn.strchars(line)
     ---@type WindowCell
-    local new_cell = vim.fn.strdisplaywidth(line:sub(1, jt.cursor.col)) + dcell
-    if new_cell >= line_cells then
-      new_cell = line_cells
-    elseif new_cell < 0 then
-      new_cell = 0
+    local new_char = vim.fn.strchars(line:sub(1, jt.cursor.col)) + dcell
+    if new_char >= line_chars then
+      new_char = line_chars - 1
+    elseif new_char < 0 then
+      new_char = 0
     end
-    jt.cursor.col = vim.fn.byteidx(line, window.cell2char(line, new_cell))
+    jt.cursor.col = vim.fn.byteidx(line, new_char)
   end
 end
 
