@@ -1,6 +1,7 @@
 ---@class Options
 ---@field direction HintDirection
 ---@field loaded_mappings any
+---@field forced_motion string?
 local M = {}
 
 local hint = require('hop.hint')
