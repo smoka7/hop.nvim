@@ -83,6 +83,20 @@ function M.regex_by_word_start()
   return regex_by_searching('\\k\\+')
 end
 
+-- Regex that matches the behavior of vim's w motion. This is different from
+-- just matching on words because the w motion treats collections of non-word
+-- characters as units that you can jump to. For example, if you use the w
+-- motion to jump through the text "abc.!?def" the cursor will move from the "a"
+-- to the "." then to the "d".
+---@return Regex
+function M.regex_by_w_start()
+  local magic = '\\v' -- Makes the regex less verbose by enabling magic mode
+  local words = '\\k+' -- Captures a word as
+  local non_words = '(\\k@!\\S)+' -- Any non-space character that's not a word
+  local w = '(' .. words .. '|' .. non_words .. ')'
+  return regex_by_searching(magic .. w)
+end
+
 -- Camel case regex.
 ---@return Regex
 function M.regex_by_camel_case()
