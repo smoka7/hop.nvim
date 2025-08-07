@@ -1,3 +1,4 @@
+local utils = require('hop.utils')
 local api = vim.api
 local M = {}
 
@@ -50,16 +51,6 @@ local function eprintln(msg, teasing)
   end
 end
 
----@param buf_list number[] list of buffer handles
----@param hl_ns number highlight namespace
-local function clear_namespace(buf_list, hl_ns)
-  for _, buf in ipairs(buf_list) do
-    if api.nvim_buf_is_valid(buf) then
-      api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
-    end
-  end
-end
-
 -- Add the virtual cursor, taking care to handle the cases where:
 -- - the virtualedit option is being used and the cursor is in a
 --   tab character or past the end of the line
@@ -78,13 +69,13 @@ local function add_virt_cur(ns)
 
   -- first check to see if cursor is in a tab char or past end of line or in empty line
   if cur_offset ~= 0 or #cur_line == cur_col then
-    api.nvim_buf_set_extmark(0, ns, cur_row, cur_col, {
+    utils.buf_set_extmark(0, ns, cur_row, cur_col, {
       virt_text = { { '█', 'Normal' } },
       virt_text_win_col = virt_col,
       priority = hint.HintPriority.CURSOR,
     })
   else
-    api.nvim_buf_set_extmark(0, ns, cur_row, cur_col, {
+    utils.buf_set_extmark(0, ns, cur_row, cur_col, {
       -- end_col must be column of next character, in bytes
       end_col = vim.fn.byteidx(cur_line, vim.fn.charidx(cur_line, cur_col) + 1),
       hl_group = 'HopCursor',
@@ -122,7 +113,8 @@ local function apply_dimming(hint_state, opts)
     sanitize_cols(wctx)
     local start_line, end_line = window.line_range2extmark(wctx.line_range)
     local start_col, end_col = window.column_range2extmark(wctx.column_range)
-    api.nvim_buf_set_extmark(wctx.buf_handle, hint_state.dim_ns, start_line, start_col, {
+    local win_id = wctx.win_handle
+    utils.buf_set_extmark(wctx.buf_handle, hint_state.ns[win_id].dim, start_line, start_col, {
       end_line = end_line,
       end_col = end_col,
       hl_group = 'HopUnmatched',
@@ -131,14 +123,14 @@ local function apply_dimming(hint_state, opts)
     })
 
     -- Hide diagnostics
-    for ns in pairs(hint_state.diag_ns) do
+    for ns in pairs(hint_state.ns[win_id].diag) do
       vim.diagnostic.show(ns, wctx.buf_handle, nil, { virtual_text = false })
     end
   end
 
   -- Add the virtual cursor
   if opts.virtual_cursor then
-    add_virt_cur(hint_state.hl_ns)
+    add_virt_cur(hint_state.ns[api.nvim_get_current_win()].hl)
   end
 end
 
@@ -155,7 +147,6 @@ function M.get_input_pattern(prompt, maxchar, opts)
   local hs = {}
   if opts then
     hs = hint.create_hint_state(opts)
-    hs.preview_ns = api.nvim_create_namespace('hop_preview')
     apply_dimming(hs, opts)
   end
 
@@ -167,12 +158,12 @@ function M.get_input_pattern(prompt, maxchar, opts)
     pat = vim.fn.join(pat_keys, '')
 
     if opts and #pat > 0 then
-      clear_namespace(hs.buf_list, hs.preview_ns)
+      hint.clear_hint_namespace(hs, "preview")
       local ok, re = pcall(jump_regex.regex_by_case_searching, pat, false, opts)
       if ok then
         local jump_target_gtr = jump_target.jump_target_generator(re, hs.all_ctxs)
         local generated = jump_target_gtr(opts)
-        hint.set_hint_preview(hs.preview_ns, generated.jump_targets)
+        hint.set_hint_preview(hs, generated.jump_targets)
       end
     end
 
@@ -204,7 +195,7 @@ function M.get_input_pattern(prompt, maxchar, opts)
   end
 
   if opts then
-    clear_namespace(hs.buf_list, hs.preview_ns)
+    hint.clear_hint_namespace(hs, "preview")
     -- quit only when got nothin for pattern to avoid blink of highlight
     if not pat then
       M.quit(hs)
@@ -295,8 +286,8 @@ function M.hint_with_callback(jump_target_gtr, opts, callback)
       eprintln(' -> there’s no such thing we can see…', opts.teasing)
     end
 
-    clear_namespace(hs.buf_list, hs.hl_ns)
-    clear_namespace(hs.buf_list, hs.dim_ns)
+    hint.clear_hint_namespace(hs, "hl")
+    hint.clear_hint_namespace(hs, "dim")
     return
   end
 
@@ -304,7 +295,7 @@ function M.hint_with_callback(jump_target_gtr, opts, callback)
   hs.hints = hint.create_hints(generated.jump_targets, generated.indirect_jump_targets, opts)
 
   apply_dimming(hs, opts)
-  hint.set_hint_extmarks(hs.hl_ns, hs.hints, opts)
+  hint.set_hint_extmarks(hs, hs.hints, opts)
   vim.cmd.redraw()
 
   local h = nil
@@ -355,8 +346,8 @@ function M.refine_hints(key, hint_state, callback, opts)
 
     hint_state.hints = hints
 
-    clear_namespace(hint_state.buf_list, hint_state.hl_ns)
-    hint.set_hint_extmarks(hint_state.hl_ns, hints, opts)
+    hint.clear_hint_namespace(hint_state, "hl")
+    hint.set_hint_extmarks(hint_state, hints, opts)
   else
     M.quit(hint_state)
 
@@ -368,16 +359,19 @@ end
 -- Quit Hop and delete its resources.
 ---@param hint_state HintState
 function M.quit(hint_state)
-  clear_namespace(hint_state.buf_list, hint_state.hl_ns)
-  clear_namespace(hint_state.buf_list, hint_state.dim_ns)
+  local hint = require('hop.hint')
+  hint.clear_hint_namespace(hint_state, "hl")
+  hint.clear_hint_namespace(hint_state, "dim")
 
-  for _, buf in ipairs(hint_state.buf_list) do
+  for _, wctx in ipairs(hint_state.all_ctxs) do
+    local win_id = wctx.win_handle
+    local buf_id = wctx.buf_handle
     -- sometimes, buffers might be unloaded; that’s the case with floats for instance (we can invoke Hop from them but
     -- then they disappear); we need to check whether the buffer is still valid before trying to do anything else with
     -- it
-    if api.nvim_buf_is_valid(buf) then
-      for ns in pairs(hint_state.diag_ns) do
-        vim.diagnostic.show(ns, buf)
+    if api.nvim_buf_is_valid(buf_id) then
+      for ns in pairs(hint_state.ns[win_id].diag) do
+        vim.diagnostic.show(ns, buf_id)
       end
     end
   end
