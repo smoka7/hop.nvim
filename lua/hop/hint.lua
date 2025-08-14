@@ -63,7 +63,7 @@ end
 ---@param a CursorPos Cursor Position
 ---@param b CursorPos Jump target position
 ---@param x_bias number
----@return number 
+---@return number
 function M.readwise_distance(a, b, x_bias)
   return (100 * math.abs(b.row - a.row)) + (b.col - a.col)
 end
