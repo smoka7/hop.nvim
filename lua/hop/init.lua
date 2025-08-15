@@ -210,8 +210,10 @@ function M.get_input_pattern(prompt, maxchar, opts)
       M.quit(hs)
     end
   end
-  api.nvim_echo({}, false, {})
-  vim.cmd.redraw()
+  vim.schedule(function()
+    api.nvim_echo({}, false, {})
+    vim.cmd.redraw()
+  end)
   return pat
 end
 
