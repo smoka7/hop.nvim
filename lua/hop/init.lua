@@ -176,7 +176,7 @@ function M.get_input_pattern(prompt, maxchar, opts)
       end
     end
 
-    api.nvim_echo({ { string.rep('\n', vim.o.cmdheight) } }, false, {})
+    api.nvim_echo({}, false, {})
     vim.cmd.redraw()
     api.nvim_echo({ { prompt, 'Question' }, { pat } }, false, {})
 
@@ -210,7 +210,7 @@ function M.get_input_pattern(prompt, maxchar, opts)
       M.quit(hs)
     end
   end
-  api.nvim_echo({ { string.rep('\n', vim.o.cmdheight) } }, false, {})
+  api.nvim_echo({}, false, {})
   vim.cmd.redraw()
   return pat
 end
