@@ -1054,7 +1054,7 @@ highlight is used. For the rest:
     Lua functions.
 
 `HopPreview`                                                   *hop-hl-HopPreview*
-    Highlight used for to preview the hint for HopPattern.
+    Highlight used to preview the matched strings for HopPattern.
 
 Highlights are inserted in an augroup, `HopInitHighlight`, and an autocommand
 is automatically set when initializing the plugin, unless you set
