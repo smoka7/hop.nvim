@@ -17,7 +17,7 @@ local function check_opts(opts)
     return
   end
 
-  if vim.version.cmp({ 0, 10, 0 }, vim.version()) < 0 then
+  if vim.version.cmp({ 0, 10, 0 }, vim.version()) > 0 then
     local hint = require('hop.hint')
     opts.hint_type = hint.HintType.OVERLAY
   end
