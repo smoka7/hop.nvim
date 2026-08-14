@@ -1,6 +1,9 @@
+---@alias VisualMode '"v"' | '"V"' | '"<C-v>"' the mode to enter if operator pending
+
 ---@class Options
 ---@field direction HintDirection
 ---@field loaded_mappings any
+---@field visual_mode? VisualMode # should be V for linewise operators (hint_lines), unset otherwise
 local M = {}
 
 local hint = require('hop.hint')
