@@ -1,19 +1,22 @@
 local perm = require('hop.perm')
 local window = require('hop.window')
+local utils = require('hop.utils')
 local api = vim.api
 
 ---@class Hint
 ---@field label string|nil
 ---@field jump_target JumpTarget
 
+---@class HintNamespace
+---@field hl integer
+---@field dim integer
+---@field preview integer
+---@field diag table
+
 ---@class HintState
----@field buf_list integer[]
 ---@field all_ctxs WindowContext[]
 ---@field hints Hint[]
----@field hl_ns integer
----@field dim_ns integer
----@field preview_ns integer
----@field diag_ns table
+---@field ns HintNamespace[]
 
 local M = {}
 
@@ -151,40 +154,32 @@ function M.create_hint_state(opts)
   local hint_state = {}
 
   hint_state.all_ctxs = window.get_windows_context(opts)
-  hint_state.buf_list = {}
-  local buf_sets = {}
   for _, wctx in ipairs(hint_state.all_ctxs) do
-    if not buf_sets[wctx.buf_handle] then
-      buf_sets[wctx.buf_handle] = true
-      hint_state.buf_list[#hint_state.buf_list + 1] = wctx.buf_handle
-    end
+    local win_id = wctx.win_handle
     -- Ensure all window contexts are cliped for hint state
     window.clip_window_context(wctx, opts)
-  end
-
-  -- Create the highlight groups; the highlight groups will allow us to clean everything at once when Hop quits
-  hint_state.hl_ns = api.nvim_create_namespace('hop_hl')
-  hint_state.dim_ns = api.nvim_create_namespace('hop_dim')
-
-  -- Clear namespaces in case last hop operation failed before quitting
-  for _, buf in ipairs(hint_state.buf_list) do
-    if api.nvim_buf_is_valid(buf) then
-      api.nvim_buf_clear_namespace(buf, hint_state.hl_ns, 0, -1)
-      api.nvim_buf_clear_namespace(buf, hint_state.dim_ns, 0, -1)
+    -- Create the highlight groups; the highlight groups will allow us to clean everything at once when Hop quits
+    ---@type HintNamespace
+    local ns = {
+      hl = utils.create_namespace(win_id, 'hop_hl', true),
+      dim = utils.create_namespace(win_id, 'hop_dim', true),
+      preview = utils.create_namespace(win_id, 'hop_preview', true),
+      diag = vim.diagnostic.get_namespaces(),
+    }
+    if not hint_state.ns then
+      hint_state.ns = {}
     end
+    hint_state.ns[win_id] = ns
   end
-
-  -- Backup namespaces of diagnostic
-  hint_state.diag_ns = vim.diagnostic.get_namespaces()
 
   return hint_state
 end
 
 -- Create the extmarks for per-line hints.
----@param hl_ns integer
+---@param hint_state HintState
 ---@param hints Hint[]
 ---@param opts Options
-function M.set_hint_extmarks(hl_ns, hints, opts)
+function M.set_hint_extmarks(hint_state, hints, opts)
   for _, hint in pairs(hints) do
     local label = hint.label
     if opts.uppercase_labels and label ~= nil then
@@ -199,7 +194,8 @@ function M.set_hint_extmarks(hl_ns, hints, opts)
     end
 
     local row, col = window.pos2extmark(hint.jump_target.cursor)
-    api.nvim_buf_set_extmark(hint.jump_target.buffer, hl_ns, row, col, {
+    local hl_ns = hint_state.ns[hint.jump_target.window].hl
+    utils.buf_set_extmark(hint.jump_target.buffer, hl_ns, row, col, {
       virt_text = virt_text,
       virt_text_pos = opts.hint_type,
       hl_mode = opts.hl_mode,
@@ -208,18 +204,29 @@ function M.set_hint_extmarks(hl_ns, hints, opts)
   end
 end
 
----@param hl_ns integer
+---@param hint_state HintState
 ---@param jump_targets JumpTarget[]
-function M.set_hint_preview(hl_ns, jump_targets)
+function M.set_hint_preview(hint_state, jump_targets)
   for _, jt in ipairs(jump_targets) do
     local row, col = window.pos2extmark(jt.cursor)
-    api.nvim_buf_set_extmark(jt.buffer, hl_ns, row, col, {
+    local hl_ns = hint_state.ns[jt.window].preview
+    utils.buf_set_extmark(jt.buffer, hl_ns, row, col, {
       end_row = row,
       end_col = col + jt.length,
       hl_group = 'HopPreview',
       hl_eol = true,
       priority = M.HintPriority.HINT,
     })
+  end
+end
+
+-- Clear specified namespaces in the hint state.
+---@param hint_state HintState
+---@param name string
+function M.clear_hint_namespace(hint_state, name)
+  for _, wctx in ipairs(hint_state.all_ctxs) do
+    local win_id = wctx.win_handle
+    utils.clear_namespace(win_id, hint_state.ns[win_id][name], 0, -1)
   end
 end
 
