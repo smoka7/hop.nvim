@@ -14,6 +14,7 @@ local api = vim.api
 ---@field dim_ns integer
 ---@field preview_ns integer
 ---@field diag_ns table
+---@field history table[]
 
 local M = {}
 
@@ -176,6 +177,9 @@ function M.create_hint_state(opts)
 
   -- Backup namespaces of diagnostic
   hint_state.diag_ns = vim.diagnostic.get_namespaces()
+
+  -- Initialize history
+  hint_state.history = {}
 
   return hint_state
 end
