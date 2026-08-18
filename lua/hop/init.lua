@@ -31,6 +31,13 @@ local function check_opts(opts)
   if mode ~= 'n' and mode ~= 'nt' then
     opts.multi_windows = false
   end
+
+	local caller = debug.getinfo(3).name
+	if caller ~= 'hint_lines' and caller ~= 'hint_lines_skip_whitespace' then
+    if opts.hint_type == 'right_align' then
+      vim.notify('Cannot use right_align with this action (' .. caller .. ')', vim.log.levels.WARN)
+    end
+  end
 end
 
 -- Allows to override global options with user local overrides.

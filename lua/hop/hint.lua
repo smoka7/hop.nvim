@@ -34,6 +34,7 @@ M.HintPosition = {
 M.HintType = {
   OVERLAY = 'overlay',
   INLINE = 'inline',
+  RIGHT_ALIGN = 'right_align'
 }
 
 ---@enum HintPriority
